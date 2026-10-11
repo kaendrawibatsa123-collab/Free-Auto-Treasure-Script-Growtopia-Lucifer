@@ -4,15 +4,13 @@
 
 local WorldsSetting = {
     worldTreasure = {
-        "BERLINNTREASURE3",
-        "BERLINNTREASURE4",
-        "BERLINNTREASURE5",
-        "BERLINNTREASURE6",
+        "BERLINNTREASURE11",
+
         -- Change this to your worlds
     },
-    worldTreasureId = "idworldtreasure", -- id door world treasure
-    storageWorld =  "storageworld", -- storage worlds
-    storageWorldId = "idstorage", -- storage world id
+    worldTreasureId = 'KAKA1', -- id door world treasure
+    storageWorld =  'BRLNPEPPER', -- storage worlds
+    storageWorldId = 'KAKA1', -- storage world id
 }
 
 local Delay = {
@@ -267,10 +265,12 @@ local function breakTreasure(world, idBlock)
     local tiles = getTilesFg(idBlock, tileWorlds)
     log('Total tiles found: ' .. #tiles.." "..getInfo(idBlock).name)
 
+    
     for i, tile in ipairs(tiles) do
         local pos = { x = bot.x, y = bot.y }
         local targetTile = tile
-
+        local currentEgg = bot:getInventory():getItemCount(7764)
+        print("currentEgg: "..currentEgg)
         while not successPath(targetTile, pos.x, pos.y) do
             pos = clossestPath(targetTile.x, targetTile.y)
 
@@ -328,10 +328,14 @@ local function breakTreasure(world, idBlock)
                 end
                 Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
             end
+            local Egg = bot:getInventory():getItemCount(7764)
+            print("Egg "..Egg)
+            if Egg > currentEgg then
+                log("Got Stone Egg")
+            end
         else
         end
     end
-
 end
 
 local function isNeedToStore()
