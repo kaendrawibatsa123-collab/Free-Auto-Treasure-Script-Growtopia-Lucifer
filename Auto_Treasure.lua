@@ -2,34 +2,38 @@
 -- Discord: berlinn1
 -- Dm me if you find bug in my script
 
-local worldTreasure = {
-    "BERLINNTREASURE3",
-	"BERLINNTREASURE4",
-    "BERLINNTREASURE5",
-    "BERLINNTREASURE6",
-    -- Change this to your worlds
+local WorldsSetting = {
+    worldTreasure = {
+        "BERLINNTREASURE3",
+        "BERLINNTREASURE4",
+        "BERLINNTREASURE5",
+        "BERLINNTREASURE6",
+        -- Change this to your worlds
+    },
+    worldTreasureId = "idworldtreasure", -- id door world treasure
+    storageWorld =  "storageworld", -- storage worlds
+    storageWorldId = "idstorage", -- storage world id
 }
-local worldTreasureId = "idstorage" -- id door world treasure
 
-DelayBreak = 150 -- you can change this (miliseconds)
-DelayPlace = 250 -- you can change this (miliseconds)
-DelayWarp = 5000 -- you can change this (miliseconds)
+local Delay = {
+    dynamicDelay = {
+        enabled = true, -- set true for dynamic delay, reduce bot detection
+    },
+    -- ignore this if dynamicDelay true
+    DelayBreak = 150, -- you can change this (miliseconds),
+    DelayWarp = 5000, -- you can change this (miliseconds),
+}
 
-local storageWorld =  "storageworld" -- storage worlds
-local storageWorldId = "idstorage" -- storage world id
-local collectRange = 5 -- collect range (3-5)
-
-rewardsId = {7624, 7625, 7630, 7631, 7626, 7627, 440, 441, 7590, 7764, 2226, 2227} -- dont change
-
+local onlyBreakTreasure = true -- set true for only break treasure, if false bot will break other items like altar, etc
 
 -- ================= Code Area (Dont Touch)
+rewardsId = {7624, 7625, 7630, 7631, 7626, 7627, 440, 441, 7590, 7764, 2226, 2227}
 bot = getBot()
 
 local nuked = false
 local stuck = false
 local bot = getBot()
 bot.auto_collect = true
-bot.collect_range = collectRange
 local trashId = { 3564, 3565, 9380, 9381, 3556, 3557, 10102, 9400, 3568, 3570, 3571, 3573, 3572, 9393, 3569, 3568, 7620, 7621 }
 
 local function log(text)
@@ -270,7 +274,7 @@ local function breakTreasure(world, idBlock)
         while not successPath(targetTile, pos.x, pos.y) do
             pos = clossestPath(targetTile.x, targetTile.y)
 
-            Reconnect(world, worldTreasureId, pos.x, pos.y)
+            Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
 
             if getTile(pos.x, pos.y+1).fg == idLock then
                 targetTile = getNextClosestTile(tileWorlds, pos, idLock)
@@ -280,9 +284,9 @@ local function breakTreasure(world, idBlock)
             end
 
             while not bot:isInTile(pos.x, pos.y) do
-                Reconnect(world, worldTreasureId, pos.x, pos.y)
+                Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
                 findPath(pos.x, pos.y)
-                Reconnect(world, worldTreasureId, pos.x, pos.y)
+                Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
             end
 
             if successPath(targetTile, pos.x, pos.y) then
@@ -297,24 +301,32 @@ local function breakTreasure(world, idBlock)
             if isPunchable(a.x, a.y) and bot:isInTile(pos.x, pos.y) then
                 while isPunchable(a.x, a.y) and bot:isInTile(pos.x, pos.y) do
                     bot:hit(a.x, a.y)
-                    sleep(DelayBreak)
+                    if Delay.dynamicDelay.enabled then
+                        sleep(math.random(100,150)+bot:getPing())
+                    else
+                        sleep(Delay.DelayBreak)
+                    end
                 end
             else
                 while not bot:isInTile(pos.x, pos.y) do
-                    Reconnect(world, worldTreasureId, pos.x, pos.y)
+                    Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
                     findPath(pos.x, pos.y)
-                    Reconnect(world, worldTreasureId, pos.x, pos.y)
+                    Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
                 end
             end
-            Reconnect(world, worldTreasureId, pos.x, pos.y)
+            Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
         end
 
         if successPath(targetTile, pos.x, pos.y) and bot:isInTile(pos.x, pos.y) then
             while getTile(targetTile.x, targetTile.y).fg == idBlock and hasAccess(targetTile.x, targetTile.y) > 0 and bot:isInTile(pos.x, pos.y) do
-                Reconnect(world, worldTreasureId, pos.x, pos.y)
+                Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
                 bot:hit(targetTile.x, targetTile.y)
-                sleep(DelayBreak)
-                Reconnect(world, worldTreasureId, pos.x, pos.y)
+                if Delay.dynamicDelay.enabled then
+                    sleep(math.random(100,150)+bot:getPing())
+                else
+                    sleep(Delay.DelayBreak)
+                end
+                Reconnect(world, WorldsSetting.worldTreasureId, pos.x, pos.y)
             end
         else
         end
@@ -337,7 +349,7 @@ local function storeItem()
         log('Storing Item')
         bot.auto_collect = false
         while isNeedToStore() do
-            warp(storageWorld, storageWorldId)
+            warp(WorldsSetting.storageWorld, WorldsSetting.storageWorldId)
             if not nuked then
                 if not stuck then
                     for _, itm in pairs(rewardsId) do
@@ -366,23 +378,35 @@ end
 local function gacha(worlds)
     bot.custom_status = "Gacha Treasure"
     if bot:isInWorld() then
-        breakTreasure(worlds, 7628)
+        if onlyBreakTreasure then
+            breakTreasure(worlds, 7628)
+        else
+            breakTreasure(worlds, 7628)
+            breakTreasure(worlds, 7624)
+            breakTreasure(worlds, 7626)
+            breakTreasure(worlds, 440)
+        end
     end
+
 end
 
 local function runScript()
     bot.ignore_gems = true
     Reconnect()
-    for i = 1, #worldTreasure do
+    for i = 1, #WorldsSetting.worldTreasure do
         bot.auto_collect = true
-        while not bot:isInWorld(worldTreasure[i]) do
-            warp(worldTreasure[i], worldTreasureId)
-            sleep(DelayWarp)
-            if bot:isInWorld(worldTreasure[i]) then
+        while not bot:isInWorld(WorldsSetting.worldTreasure[i]) do
+            warp(WorldsSetting.worldTreasure[i], WorldsSetting.worldTreasureId)
+            if Delay.dynamicDelay.enabled then
+                sleep(math.random(4000,7000)+bot:getPing())
+            else
+                sleep(Delay.DelayWarp)
+            end
+            if bot:isInWorld(WorldsSetting.worldTreasure[i]) then
                 break
             end
         end
-        local world = worldTreasure[i]
+        local world = WorldsSetting.worldTreasure[i]
         gacha(world)
         trash()
         storeItem()
